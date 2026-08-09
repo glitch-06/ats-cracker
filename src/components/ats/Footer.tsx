@@ -2,6 +2,8 @@ import { useState } from "react";
 
 import { Modal } from "./ui";
 
+const SUPPORT_EMAIL = "youremail@gmail.com"; // <-- replace with your real email
+
 const CONTENT: Record<string, { title: string; body: string[] }> = {
   about: {
     title: "About Us",
@@ -13,8 +15,7 @@ const CONTENT: Record<string, { title: string; body: string[] }> = {
   contact: {
     title: "Contact Us",
     body: [
-      "Questions, bugs or partnership ideas? Reach us at hello@atscracker.example.",
-      "We usually reply within one business day.",
+      "Questions, bugs, or partnership ideas? Reach us directly by email — we usually reply within one business day.",
     ],
   },
   privacy: {
@@ -42,6 +43,12 @@ export function Footer() {
             {item.title}
           </button>
         ))}
+        
+          <a href={`mailto:${SUPPORT_EMAIL}?subject=ATS Cracker Support`}
+          className="transition-colors duration-200 hover:text-foreground"
+        >
+          Need Help? Email Support
+        </a>
       </div>
       <div className="my-6 h-0.5 w-full bg-border" />
       <p className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">
@@ -51,6 +58,14 @@ export function Footer() {
       <Modal open={!!active} onClose={() => setOpenKey(null)} title={active?.title ?? ""}>
         <div className="space-y-3 text-left text-sm text-muted-foreground">
           {active?.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          {openKey === "contact" ? (
+            
+              <a href={`mailto:${SUPPORT_EMAIL}?subject=ATS Cracker Support`}
+              className="inline-block font-medium text-foreground underline underline-offset-4"
+            >
+              {SUPPORT_EMAIL}
+            </a>
+          ) : null}
         </div>
       </Modal>
     </footer>
