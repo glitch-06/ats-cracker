@@ -1,0 +1,218 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * ATS CRACKER — "Dispatch Console" design system.
+ * Industrial / neo-brutalist: hard 2px rules, offset shadows, no rounded blobs,
+ * condensed display type (Bebas Neue), mono meta labels (IBM Plex Mono),
+ * a single acid-lime signal colour on ink black or bone white.
+ */
+
+@theme inline {
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+}
+
+:root {
+  --radius: 0px;
+  /* Light — bone paper, ink rules, lime signal */
+  --background: oklch(0.955 0.008 95);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(0.985 0.005 95);
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(0.985 0.005 95);
+  --popover-foreground: oklch(0.16 0 0);
+  --primary: oklch(0.16 0 0);
+  --primary-foreground: oklch(0.97 0.01 95);
+  --secondary: oklch(0.91 0.008 95);
+  --secondary-foreground: oklch(0.16 0 0);
+  --muted: oklch(0.91 0.008 95);
+  --muted-foreground: oklch(0.46 0.01 95);
+  --accent: oklch(0.89 0.01 95);
+  --accent-foreground: oklch(0.16 0 0);
+  --signal: oklch(0.82 0.21 128);
+  --signal-foreground: oklch(0.16 0 0);
+  --destructive: oklch(0.52 0.2 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.16 0 0 / 22%);
+  --border-strong: oklch(0.16 0 0);
+  --input: oklch(0.16 0 0 / 30%);
+  --ring: oklch(0.82 0.21 128);
+  --surface: oklch(1 0 0 / 55%);
+  --panel-bg: oklch(0.99 0.004 95);
+  --panel-shadow: 6px 6px 0 0 oklch(0.16 0 0 / 90%);
+  --grid-line: oklch(0.16 0 0 / 7%);
+}
+
+.dark {
+  /* Dark — ink black, bone ink, lime signal */
+  --background: oklch(0.145 0.004 250);
+  --foreground: oklch(0.94 0.008 95);
+  --card: oklch(0.19 0.004 250);
+  --card-foreground: oklch(0.94 0.008 95);
+  --popover: oklch(0.19 0.004 250);
+  --popover-foreground: oklch(0.94 0.008 95);
+  --primary: oklch(0.94 0.008 95);
+  --primary-foreground: oklch(0.145 0 0);
+  --secondary: oklch(0.24 0.004 250);
+  --secondary-foreground: oklch(0.94 0.008 95);
+  --muted: oklch(0.24 0.004 250);
+  --muted-foreground: oklch(0.66 0.008 95);
+  --accent: oklch(0.28 0.004 250);
+  --accent-foreground: oklch(0.94 0.008 95);
+  --signal: oklch(0.86 0.22 128);
+  --signal-foreground: oklch(0.145 0 0);
+  --destructive: oklch(0.65 0.19 27);
+  --destructive-foreground: oklch(0.145 0 0);
+  --border: oklch(1 0 0 / 18%);
+  --border-strong: oklch(0.94 0.008 95);
+  --input: oklch(1 0 0 / 22%);
+  --ring: oklch(0.86 0.22 128);
+  --surface: oklch(1 0 0 / 5%);
+  --panel-bg: oklch(0.185 0.004 250);
+  --panel-shadow: 6px 6px 0 0 oklch(0.86 0.22 128 / 90%);
+  --grid-line: oklch(1 0 0 / 6%);
+}
+
+/* Hard-edged panel with an offset "printed plate" shadow */
+@utility plate {
+  background: var(--panel-bg);
+  border: 2px solid var(--color-border-strong);
+  box-shadow: var(--panel-shadow);
+}
+
+/* Flat bordered block — the quieter sibling of .plate */
+@utility slab {
+  background: var(--panel-bg);
+  border: 2px solid var(--color-border-strong);
+}
+
+/* Blueprint grid backdrop */
+@utility gridfield {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Mono uppercase meta label */
+@utility meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Press-down interaction shared by buttons and cards */
+@utility lift {
+  transition:
+    transform 120ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 120ms ease,
+    color 160ms ease;
+  &:hover {
+    transform: translate(-2px, -2px);
+  }
+  &:active {
+    transform: translate(1px, 1px);
+  }
+}
+
+/* Legacy alias kept so older markup still renders as a plate */
+@utility glass {
+  background: var(--panel-bg);
+  border: 2px solid var(--color-border-strong);
+}
+
+@utility text-gradient {
+  color: var(--color-signal);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    transition:
+      background-color 200ms ease,
+      color 200ms ease;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+}
+
+@keyframes ats-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: ats-fade-up 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ats-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: ats-marquee 28s linear infinite;
+}
