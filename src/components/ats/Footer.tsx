@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Modal } from "./ui";
 
-const SUPPORT_EMAIL = "youremail@gmail.com"; // <-- replace with your real email
+const SUPPORT_EMAIL = "mecalcutta06@gmail.com"; 
 
 const CONTENT: Record<string, { title: string; body: string[] }> = {
   about: {
