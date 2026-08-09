@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { supabase } from "@/lib/supabase";
 import { Badge, Button, Input, Label } from "./ui";
 
 const MARQUEE = "BEAT THE BOT · RANK FIRST · GET THE CALL · ";
@@ -7,7 +8,7 @@ const MARQUEE = "BEAT THE BOT · RANK FIRST · GET THE CALL · ";
 /**
  * AUTH SCREEN — split-screen console door.
  * Left: oversized editorial statement. Right: the access panel.
- * Email + OTP are entirely mocked; no email is sent and no code is verified.
+ * Email + OTP handled by Supabase Auth.
  */
 export function AuthScreen({ onLogin }: { onLogin: (email: string) => void }) {
   const [step, setStep] = useState<"email" | "otp">("email");
@@ -27,33 +28,53 @@ export function AuthScreen({ onLogin }: { onLogin: (email: string) => void }) {
     };
   }, [countdown]);
 
-  function sendOtp() {
+  async function sendOtp() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
       setError("Enter a valid email address.");
       return;
     }
     setError("");
     setBusy(true);
-    // TODO: connect to backend — do not implement (send OTP email)
-    setTimeout(() => {
-      setBusy(false);
-      setStep("otp");
-      setCountdown(60);
-    }, 1000);
+
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+
+    setBusy(false);
+    if (otpError) {
+      setError(otpError.message);
+      return;
+    }
+    setStep("otp");
+    setCountdown(60);
   }
 
-  function verifyOtp() {
+  async function verifyOtp() {
     if (!/^\d{6}$/.test(otp)) {
       setError("Enter the 6-digit code.");
       return;
     }
     setError("");
     setBusy(true);
-    // TODO: connect to backend — do not implement (verify OTP, create session)
-    setTimeout(() => {
-      setBusy(false);
-      onLogin(email);
-    }, 900);
+
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "email",
+    });
+
+    setBusy(false);
+    if (verifyError) {
+      setError(verifyError.message);
+      return;
+    }
+    onLogin(data.user?.email ?? email);
+  }
+
+  async function resendOtp() {
+    setCountdown(60);
+    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
   }
 
   return (
@@ -157,7 +178,7 @@ export function AuthScreen({ onLogin }: { onLogin: (email: string) => void }) {
                     variant="tertiary"
                     size="sm"
                     disabled={countdown > 0}
-                    onClick={() => setCountdown(60)} // TODO: connect to backend — do not implement
+                    onClick={resendOtp}
                   >
                     {countdown > 0 ? `Resend in ${countdown}s` : "Resend OTP"}
                   </Button>
@@ -178,7 +199,7 @@ export function AuthScreen({ onLogin }: { onLogin: (email: string) => void }) {
           </div>
 
           <p className="meta mt-5 text-muted-foreground">
-            Prototype mode — any valid email + any 6-digit code signs you in.
+            Enter your email to receive a 6-digit login code.
           </p>
         </div>
       </section>

@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 
 import { AppShell } from "@/components/ats/AppShell";
 import { AuthScreen } from "@/components/ats/AuthScreen";
 import { useTheme } from "@/components/ats/theme";
 import { ToastProvider } from "@/components/ats/toast";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,15 +29,31 @@ export const Route = createFileRoute("/")({
 /** Root screen: mocked auth gate in front of the app shell. */
 function Index() {
   const { theme, toggle } = useTheme();
-  // TODO: connect to backend — do not implement (real session state)
   const [email, setEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setEmail(data.session?.user.email ?? null);
+      setLoading(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user.email ?? null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  if (loading) return null; // or a spinner
 
   return (
     <ToastProvider>
       {email ? (
         <AppShell
           email={email}
-          onLogout={() => setEmail(null)}
+          onLogout={async () => {
+            await supabase.auth.signOut();
+            setEmail(null);
+          }}
           theme={theme}
           onToggleTheme={toggle}
         />

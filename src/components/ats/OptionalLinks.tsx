@@ -102,8 +102,18 @@ export function OptionalLinks() {
   const [certs, setCerts] = useState<LinkRow[]>([]);
   const [saved, setSaved] = useState(false);
 
-  function save() {
-    // TODO: connect to backend — do not implement (persist profile links)
+  async function save() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("profile_links").upsert({
+      user_id: user.id,
+      linkedin_url: linkedin,
+      github_url: github,
+      profiles: profiles,
+      projects: projects,
+      certifications: certs,
+      updated_at: new Date().toISOString(),
+    });
     setSaved(true);
     toast("Profile links saved!");
     setTimeout(() => setSaved(false), 2500);

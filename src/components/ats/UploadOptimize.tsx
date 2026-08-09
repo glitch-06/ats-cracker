@@ -2,10 +2,6 @@ import { useRef, useState } from "react";
 
 import { Button, GlassCard, Label, SectionTitle, Textarea } from "./ui";
 
-/**
- * UPLOAD & OPTIMIZE — the file is kept in local state only.
- * Nothing is parsed, read or uploaded anywhere.
- */
 export function UploadOptimize({
   jobDescription,
   onJobDescription,
@@ -15,7 +11,7 @@ export function UploadOptimize({
   jobDescription: string;
   onJobDescription: (value: string) => void;
   fileName: string | null;
-  onFile: (name: string | null) => void;
+  onFile: (file: File | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -51,7 +47,7 @@ export function UploadOptimize({
               e.preventDefault();
               setDragging(false);
               const file = e.dataTransfer.files?.[0];
-              if (file) onFile(file.name); // client-side only — no parsing
+              if (file) onFile(file);
             }}
             onClick={() => inputRef.current?.click()}
             className={`flex cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 py-12 text-center transition-all duration-150 ${
@@ -65,7 +61,7 @@ export function UploadOptimize({
               type="file"
               accept=".pdf,.docx"
               className="hidden"
-              onChange={(e) => onFile(e.target.files?.[0]?.name ?? null)}
+              onChange={(e) => onFile(e.target.files?.[0] ?? null)}
             />
             <p className="font-display text-2xl uppercase leading-none">
               {fileName ?? "Drag & drop your resume here"}

@@ -9,8 +9,8 @@ import { Sidebar } from "./Sidebar";
 import { ThemeToggle } from "./theme";
 import { UploadOptimize } from "./UploadOptimize";
 import { AlertCard, Badge, Button } from "./ui";
+import { extractResumeText } from "@/lib/extractText";
 
-/** Sections wired to the left index rail. */
 const INDEX = [
   { id: "upload", num: "01", label: "Upload" },
   { id: "optional-links", num: "02", label: "Links" },
@@ -21,12 +21,6 @@ const INDEX = [
 const TICKER =
   "ATS CRACKER  ·  KEYWORD REWRITE  ·  DOCX EXPORT  ·  LINK INJECTION  ·  BEAT THE BOT  ·  ";
 
-/**
- * APP SHELL — "dispatch console" layout.
- * Left: sticky index rail + account plate (top drawer on mobile).
- * Top: hard-ruled masthead with a running ticker.
- * Credits / uses are mock state; nothing is persisted.
- */
 export function AppShell({
   email,
   onLogout,
@@ -43,12 +37,35 @@ export function AppShell({
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [active, setActive] = useState("upload");
 
-  // TODO: connect to backend — do not implement (fetch remaining credits)
   const [uses, setUses] = useState(10);
   const [jobDescription, setJobDescription] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
 
-  // Highlight the index rail entry closest to the top of the viewport.
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState<string>("");
+  const [extracting, setExtracting] = useState(false);
+
+  async function handleFile(file: File | null) {
+    if (!file) {
+      setFileName(null);
+      setResumeFile(null);
+      setResumeText("");
+      return;
+    }
+    setFileName(file.name);
+    setResumeFile(file);
+    setExtracting(true);
+    try {
+      const text = await extractResumeText(file);
+      setResumeText(text);
+    } catch (err) {
+      console.error("Failed to read resume:", err);
+      setResumeText("");
+    } finally {
+      setExtracting(false);
+    }
+  }
+
   useEffect(() => {
     const onScroll = () => {
       const hit = INDEX.map((s) => {
@@ -63,7 +80,6 @@ export function AppShell({
 
   return (
     <div className="gridfield min-h-screen">
-      {/* Masthead */}
       <header className="sticky top-0 z-40 border-b-2 border-border-strong bg-background/95 backdrop-blur">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:flex sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
@@ -92,7 +108,6 @@ export function AppShell({
           </div>
         </div>
 
-        {/* Running ticker strip */}
         <div className="overflow-hidden border-t-2 border-border-strong bg-signal text-signal-foreground">
           <div className="animate-marquee flex w-max whitespace-nowrap py-1 font-mono text-[0.65rem] tracking-[0.24em]">
             <span>{TICKER.repeat(6)}</span>
@@ -102,7 +117,6 @@ export function AppShell({
       </header>
 
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 lg:grid-cols-[240px_minmax(0,1fr)]">
-        {/* Left rail: index + account */}
         <div
           className={`space-y-5 lg:sticky lg:top-32 lg:block lg:self-start ${
             drawerOpen ? "block" : "hidden"
@@ -113,8 +127,8 @@ export function AppShell({
             <ul className="space-y-1">
               {INDEX.map((s) => (
                 <li key={s.id}>
-                  <a
-                    href={`#${s.id}`}
+                  
+                    <a href={`#${s.id}`}
                     onClick={() => setDrawerOpen(false)}
                     className={`flex items-baseline gap-3 border-l-4 px-3 py-2 transition-colors duration-150 ${
                       active === s.id
@@ -134,7 +148,6 @@ export function AppShell({
         </div>
 
         <main className="min-w-0 space-y-10">
-          {/* Status plate */}
           {uses > 0 ? (
             <div className="plate animate-fade-up grid gap-4 p-6 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
               <span className="font-display text-6xl leading-none text-signal">{uses}</span>
@@ -164,7 +177,7 @@ export function AppShell({
             jobDescription={jobDescription}
             onJobDescription={setJobDescription}
             fileName={fileName}
-            onFile={setFileName}
+            onFile={handleFile}
           />
 
           <OptionalLinks />
@@ -175,7 +188,15 @@ export function AppShell({
 
           <div id="run" className="scroll-mt-32">
             <RunOptimization
-              canRun={jobDescription.trim().length > 0 && !!fileName && uses > 0}
+              canRun={
+                jobDescription.trim().length > 0 &&
+                !!resumeFile &&
+                !extracting &&
+                resumeText.trim().length > 0 &&
+                uses > 0
+              }
+              jobDescription={jobDescription}
+              resumeText={resumeText}
               onConsumeUse={() => setUses((u) => Math.max(0, u - 1))}
               onFinished={() => setFeedbackOpen(true)}
             />

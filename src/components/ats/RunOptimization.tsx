@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { supabase } from "@/lib/supabase";
+import { downloadOptimizedResume } from "@/lib/generateDocx";
 import { useToast } from "./toast";
 import { AlertCard, Button, CheckIcon, GlassCard, SectionTitle, Skeleton, Spinner } from "./ui";
 
@@ -13,45 +15,75 @@ const STEPS = [
 
 type Status = "idle" | "running" | "done" | "error";
 
-/**
- * RUN OPTIMIZATION — a fully mocked pipeline.
- * Each step advances on a ~1.2s timer; no document is processed.
- */
 export function RunOptimization({
   canRun,
+  jobDescription,
+  resumeText,
+  links,
   onConsumeUse,
   onFinished,
 }: {
   canRun: boolean;
+  jobDescription: string;
+  resumeText: string;
+  links?: Record<string, unknown>;
   onConsumeUse: () => void;
   onFinished: () => void;
 }) {
   const toast = useToast();
   const [status, setStatus] = useState<Status>("idle");
   const [current, setCurrent] = useState(0);
-  const [forceError, setForceError] = useState(false); // hidden dev toggle
+  const [errorMessage, setErrorMessage] = useState("");
+  const [result, setResult] = useState<any>(null);
 
-  // Advance the mocked pipeline one step at a time.
+  // Purely cosmetic step animation while the real request is in flight.
   useEffect(() => {
     if (status !== "running") return;
     const t = setTimeout(() => {
       if (current < STEPS.length - 1) {
         setCurrent((c) => c + 1);
-      } else if (forceError) {
-        setStatus("error");
-      } else {
-        setStatus("done");
-        onFinished();
       }
     }, 1200);
     return () => clearTimeout(t);
-  }, [status, current, forceError, onFinished]);
+  }, [status, current]);
 
-  function run() {
-    // TODO: connect to backend — do not implement (send resume + JD to the AI service)
+  async function run() {
     setCurrent(0);
     setStatus("running");
+    setErrorMessage("");
     onConsumeUse();
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (!session) {
+        throw new Error("You're not logged in. Please log in again.");
+      }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/optimize-resume`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ jobDescription, resumeText, links: links ?? {} }),
+        },
+      );
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error ?? "Something went wrong while optimizing.");
+      }
+
+      setResult(json.optimization.optimized_resume);
+      setStatus("done");
+      onFinished();
+    } catch (err: any) {
+      setErrorMessage(err.message ?? "Optimization failed.");
+      setStatus("error");
+    }
   }
 
   return (
@@ -63,15 +95,6 @@ export function RunOptimization({
           <Button onClick={run} disabled={!canRun || status === "running"}>
             {status === "running" ? "Optimizing…" : "Run ATS Optimization!"}
           </Button>
-          {/* Hidden dev toggle so the error card can be previewed */}
-          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={forceError}
-              onChange={(e) => setForceError(e.target.checked)}
-            />
-            Simulate failure (dev)
-          </label>
         </div>
 
         {!canRun && status === "idle" ? (
@@ -102,7 +125,7 @@ export function RunOptimization({
           </div>
         ) : null}
 
-        {status === "done" ? (
+        {status === "done" && result ? (
           <div className="animate-fade-up plate p-8 text-center">
             <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center border-2 border-border-strong bg-signal text-signal-foreground">
               <CheckIcon className="h-6 w-6 text-foreground" />
@@ -110,10 +133,17 @@ export function RunOptimization({
             <p className="font-display text-3xl uppercase leading-none">
               ATS Optimized resume is ready. Ace the interview!
             </p>
+            {typeof result.ats_score === "number" ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Estimated match score: <strong>{result.ats_score}/100</strong>
+              </p>
+            ) : null}
             <Button
               className="mt-5 shadow-xl"
-              // TODO: connect to backend — do not implement (stream the generated DOCX)
-              onClick={() => toast("Download started")}
+              onClick={async () => {
+                await downloadOptimizedResume(result, result.name ?? "Your Name");
+                toast("Download started");
+              }}
             >
               Download Optimized Resume
             </Button>
@@ -123,7 +153,10 @@ export function RunOptimization({
         {status === "error" ? (
           <AlertCard
             title="Optimization failed"
-            description="We couldn't finish processing your resume. Your free use has been restored — please try again in a moment."
+            description={
+              errorMessage ||
+              "We couldn't finish processing your resume. Your free use has been restored — please try again in a moment."
+            }
           />
         ) : null}
       </GlassCard>
