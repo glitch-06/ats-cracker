@@ -1,20 +1,39 @@
 import { useState } from "react";
 
+import { supabase } from "@/lib/supabase";
 import { useToast } from "./toast";
 import { Button, Modal, Textarea } from "./ui";
 
-/** FEEDBACK MODAL — mock submit only. */
+/** FEEDBACK MODAL — saves to Supabase. */
 export function FeedbackModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const toast = useToast();
   const [rating, setRating] = useState<"good" | "bad" | null>(null);
   const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function submit() {
-    // TODO: connect to backend — do not implement (store feedback)
-    onClose();
-    setRating(null);
-    setComment("");
-    toast("Feedback noted! Thanks!");
+  async function submit() {
+    setSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await supabase.from("feedback").insert({
+        user_id: user?.id ?? null,
+        email: user?.email ?? null,
+        type: "feedback",
+        message: `Rating: ${rating}${comment ? ` | Comment: ${comment}` : ""}`,
+      });
+
+      if (error) throw error;
+
+      toast("Feedback noted! Thanks!");
+    } catch (err) {
+      toast("Couldn't submit feedback — please try again.");
+    } finally {
+      setSubmitting(false);
+      onClose();
+      setRating(null);
+      setComment("");
+    }
   }
 
   return (
@@ -42,8 +61,8 @@ export function FeedbackModal({ open, onClose }: { open: boolean; onClose: () =>
           onChange={(e) => setComment(e.target.value)}
         />
         <div className="flex justify-end">
-          <Button onClick={submit} disabled={!rating}>
-            Submit Feedback
+          <Button onClick={submit} disabled={!rating || submitting}>
+            {submitting ? "Submitting…" : "Submit Feedback"}
           </Button>
         </div>
       </div>
