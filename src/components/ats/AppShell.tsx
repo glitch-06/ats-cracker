@@ -37,7 +37,7 @@ export function AppShell({
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [active, setActive] = useState("upload");
 
-  const [uses, setUses] = useState(10);
+  const [uses, setUses] = useState(2);
   const [jobDescription, setJobDescription] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
 
