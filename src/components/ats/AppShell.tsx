@@ -183,7 +183,7 @@ export function AppShell({
           <OptionalLinks />
 
           <div id="plans" className="scroll-mt-32">
-            {showPricing || uses === 0 ? <PricingSection /> : null}
+            {showPricing || uses === 0 ? (<PricingSection onCreditsAdded={(added) => setUses((u) => u + added)} />) : null}
           </div>
 
           <div id="run" className="scroll-mt-32">
