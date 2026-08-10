@@ -31,6 +31,10 @@ export async function buyCreditPack(
     const orderData = await orderRes.json();
     if (!orderRes.ok) throw new Error(orderData.error);
 
+    if (typeof window.Razorpay === "undefined") {
+      throw new Error("Payment system is still loading — please try again in a moment.");
+    }
+
     // 2. Open Razorpay checkout popup
     const rzp = new window.Razorpay({
       key: orderData.keyId,
@@ -62,6 +66,11 @@ export async function buyCreditPack(
           return;
         }
         onSuccess(verifyData.creditsAdded ?? 0);
+      },
+      modal: {
+        ondismiss: function () {
+          onError("Payment cancelled.");
+        },
       },
       theme: { color: "#a3e635" },
     });

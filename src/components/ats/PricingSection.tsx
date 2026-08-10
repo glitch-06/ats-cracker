@@ -57,39 +57,38 @@ export function PricingSection({
         subtitle="One-time packs. No subscription, no auto-renewal."
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {packs.map((pack, i) => (
-          <GlassCard
-            key={pack.id}
-            className={i === 1 ? "plate" : undefined}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-display text-2xl uppercase leading-none">{pack.name}</h3>
-              {i === 1 ? <Badge>Popular</Badge> : null}
-            </div>
+      {packs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Loading plans…</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          {packs.map((pack, i) => (
+            <GlassCard key={pack.id} className={i === 1 ? "plate" : undefined}>
+              <div className="flex items-center justify-between">
+                <h3 className="font-display text-2xl uppercase leading-none">{pack.name}</h3>
+                {i === 1 ? <Badge>Popular</Badge> : null}
+              </div>
 
-            <p className="mt-4 flex items-baseline gap-2">
-              <span className="font-display text-5xl leading-none text-signal">
-                ₹{pack.price_inr}
-              </span>
-            </p>
-            <p className="meta mt-2 text-muted-foreground">
-              {pack.credits} optimizations
-            </p>
+              <p className="mt-4 flex items-baseline gap-2">
+                <span className="font-display text-5xl leading-none text-signal">
+                  ₹{pack.price_inr}
+                </span>
+              </p>
+              <p className="meta mt-2 text-muted-foreground">{pack.credits} optimizations</p>
 
-            <div className="mt-6">
-              <Button
-                variant="secondary"
-                className="w-full"
-                disabled={loadingFor === pack.id}
-                onClick={() => buy(pack)}
-              >
-                {loadingFor === pack.id ? "Opening checkout…" : `Buy ${pack.name}`}
-              </Button>
-            </div>
-          </GlassCard>
-        ))}
-      </div>
+              <div className="mt-6">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  disabled={loadingFor === pack.id}
+                  onClick={() => buy(pack)}
+                >
+                  {loadingFor === pack.id ? "Opening checkout…" : `Buy ${pack.name}`}
+                </Button>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      )}
 
       <p className="mt-4 border-t-2 border-border pt-3 text-xs text-muted-foreground">
         <span className="font-semibold text-foreground">Pro Tip:</span> optimizations never expire
