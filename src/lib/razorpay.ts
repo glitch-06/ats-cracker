@@ -6,19 +6,29 @@ declare global {
   }
 }
 
+let activeCheckout: any = null;
+
 export async function buyCreditPack(
   packId: string,
   onSuccess: (creditsAdded: number) => void,
   onError: (message: string) => void,
 ) {
   try {
+    if (activeCheckout) {
+      try {
+        activeCheckout.close();
+      } catch {
+        // ignore
+      }
+      activeCheckout = null;
+    }
+
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
     if (!session) throw new Error("Please log in first.");
 
-    // 1. Create order via our Edge Function
     const orderRes = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-order`,
+      `${import.meta.env["VITE_SUPABASE_URL"]}/functions/v1/create-order`,
       {
         method: "POST",
         headers: {
@@ -35,7 +45,6 @@ export async function buyCreditPack(
       throw new Error("Payment system is still loading — please try again in a moment.");
     }
 
-    // 2. Open Razorpay checkout popup
     const rzp = new window.Razorpay({
       key: orderData.keyId,
       amount: orderData.amount,
@@ -44,9 +53,9 @@ export async function buyCreditPack(
       description: orderData.packName,
       order_id: orderData.orderId,
       handler: async function (response: any) {
-        // 3. Verify payment via our Edge Function
+        activeCheckout = null;
         const verifyRes = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,
+          `${import.meta.env["VITE_SUPABASE_URL"]}/functions/v1/verify-payment`,
           {
             method: "POST",
             headers: {
@@ -69,6 +78,7 @@ export async function buyCreditPack(
       },
       modal: {
         ondismiss: function () {
+          activeCheckout = null;
           onError("Payment cancelled.");
         },
       },
@@ -76,11 +86,14 @@ export async function buyCreditPack(
     });
 
     rzp.on("payment.failed", function () {
+      activeCheckout = null;
       onError("Payment failed. Please try again.");
     });
 
+    activeCheckout = rzp;
     rzp.open();
   } catch (err: any) {
+    activeCheckout = null;
     onError(err.message ?? "Something went wrong.");
   }
 }
